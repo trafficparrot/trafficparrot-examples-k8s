@@ -1,0 +1,20 @@
+{{- /* Chart 2.0.0 removed the OpenShift Route TLS termination modes; an Ingress has no such field. */ -}}
+{{- range $key := list "uitermination" "vstermination" -}}
+{{- if hasKey $.Values $key -}}
+{{- fail (printf "%s was removed in chart 2.0.0: an Ingress has no TLS termination mode. Use ingress.tls and the ingress.*.annotations; README.md maps each old value to the new settings." $key) -}}
+{{- end -}}
+{{- end -}}
+{{- /* An ingress.tls entry that covers no Ingress host would leave that host without TLS, silently. */ -}}
+{{- $hosts := list .Values.ingress.ui.host .Values.ingress.httpvs.host .Values.ingress.grpcvs.host -}}
+{{- range .Values.ingress.tls -}}
+{{- $entry := . -}}
+{{- $covered := false -}}
+{{- range $hosts -}}
+{{- if include "traffic-parrot.tlsCovers" (dict "host" . "hosts" $entry.hosts) -}}
+{{- $covered = true -}}
+{{- end -}}
+{{- end -}}
+{{- if not $covered -}}
+{{- fail (printf "ingress.tls entry with secretName %s covers none of the Ingress hosts (%s): name each host exactly, or use a wildcard one label above it." $entry.secretName (join ", " $hosts)) -}}
+{{- end -}}
+{{- end -}}

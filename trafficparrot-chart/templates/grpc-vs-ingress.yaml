@@ -1,0 +1,1 @@
+{{ include "traffic-parrot.ingress" (dict "root" $ "suffix" "grpc-vs" "port" "grpc-vs-port" "ingress" .Values.ingress.grpcvs "key" "ingress.grpcvs.host") }}

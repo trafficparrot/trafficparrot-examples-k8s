@@ -1,0 +1,1 @@
+{{ include "traffic-parrot-license-server.ingress" (dict "root" $ "suffix" "ui" "port" "ui-port" "ingress" .Values.ingress.ui "key" "ingress.ui.host") }}

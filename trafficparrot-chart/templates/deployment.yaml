@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.appid }}
+  labels:
+    app: {{ .Values.appid }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.appid }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appid }}
+    spec:
+      containers:
+      - image: {{ .Values.image }}
+        imagePullPolicy: {{ .Values.imagePullPolicy }}
+        name: {{ .Values.appid }}
+        {{- with .Values.command }}
+        command:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if .Values.license.existingSecret }}
+        env:
+        - name: TRAFFICPARROT_LICENSE
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.license.existingSecret }}
+              key: {{ .Values.license.key }}
+        {{- end }}
+        ports:
+        - containerPort: {{ .Values.uiport }}
+          name: ui-port
+        - containerPort: {{ .Values.httpvsport }}
+          name: http-vs-port
+        - containerPort: {{ .Values.grpcvsport }}
+          name: grpc-vs-port
+        readinessProbe:
+          tcpSocket:
+            port: ui-port
+          periodSeconds: 5
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}

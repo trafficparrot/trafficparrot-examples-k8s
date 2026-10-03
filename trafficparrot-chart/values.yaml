@@ -1,0 +1,45 @@
+# Name of the Deployment, Service and Ingresses, and the value of their app label.
+appid: trafficparrot
+# The image built from ../trafficparrot-image, pushed to a registry your cluster can pull from.
+image: trafficparrot:latest
+imagePullPolicy: Always
+
+# Container ports. They must match the ports in the image's trafficparrot.properties.
+uiport: 8080
+httpvsport: 8081
+grpcvsport: 5552
+
+license:
+  # Name of a Secret holding your base64-encoded trafficparrot.license under `key`. The pod reads it
+  # from the TRAFFICPARROT_LICENSE environment variable. Empty: the image's trafficparrot.license.
+  existingSecret: ""
+  key: license
+
+# Container resources, as in a pod spec.
+resources: {}
+# Container command, as in a pod spec. Empty: the image's CMD (./start-foreground.sh).
+command: []
+
+ingress:
+  # The IngressClass. The defaults below are for ingress-nginx, the controller this chart is tested with.
+  className: nginx
+  # TLS for the Ingresses, shaped like an Ingress's spec.tls. Each Ingress takes the entries whose
+  # hosts include its own host, for example:
+  #   tls:
+  #     - secretName: trafficparrot-tls
+  #       hosts: [trafficparrot-ui.example.com, trafficparrot-grpc-vs.example.com]
+  tls: []
+  ui:
+    host: trafficparrot-ui.example.com
+    annotations:
+      # Plain HTTP is redirected to HTTPS, as the OpenShift route refused it. With no ingress.tls
+      # entry for this host, ingress-nginx serves HTTPS with its default certificate.
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  httpvs:
+    host: trafficparrot-http-vs.example.com
+    annotations: {}
+  grpcvs:
+    host: trafficparrot-grpc-vs.example.com
+    annotations:
+      # ingress-nginx's way to proxy gRPC. Another controller needs its own equivalent here.
+      nginx.ingress.kubernetes.io/backend-protocol: GRPC

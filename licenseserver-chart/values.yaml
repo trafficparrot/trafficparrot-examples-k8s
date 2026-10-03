@@ -1,0 +1,41 @@
+# Name of the Deployment, Service, PersistentVolumeClaim and Ingresses, and the value of their app label.
+appid: trafficparrot-license-usage
+# The image built from ../licenseserver-image, pushed to a registry your cluster can pull from.
+image: trafficparrot-license-usage:latest
+imagePullPolicy: Always
+
+# Container ports. They must match the ports in the image's licenseusage.properties.
+uiport: 8050
+usageport: 8040
+
+# The license server's data directory. localdev: true keeps it in an emptyDir, which is lost when
+# the pod goes; false claims a PersistentVolume of `storage` from `storageclass`, or from the
+# cluster's default StorageClass when `storageclass` is empty.
+storage: 1Gi
+storageclass: ""
+localdev: true
+
+# Container resources, as in a pod spec.
+resources: {}
+# Container command, as in a pod spec. Empty: the image's CMD (./start.sh).
+command: []
+
+ingress:
+  # The IngressClass. The defaults below are for ingress-nginx, the controller this chart is tested with.
+  className: nginx
+  # TLS for the Ingresses, shaped like an Ingress's spec.tls. Each Ingress takes the entries whose
+  # hosts include its own host. The usage Ingress uses SSL passthrough by default, so its TLS is the
+  # license server's own and an entry here does not apply to it.
+  tls: []
+  ui:
+    host: trafficparrot-license-ui.example.com
+    annotations:
+      # Plain HTTP is redirected to HTTPS, as the OpenShift route refused it. With no ingress.tls
+      # entry for this host, ingress-nginx serves HTTPS with its default certificate.
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  usage:
+    host: trafficparrot-license-usage.example.com
+    annotations:
+      # The usage port serves TLS itself (license.usage.port.ssl.enabled=true), so ingress-nginx
+      # passes the TLS connection through. The controller must run with --enable-ssl-passthrough.
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
